@@ -1,8 +1,5 @@
 # New-Taipei-City-House-Price-Prediction
-STAT 425 ( Applied Regression &amp; Design) Project 
-
-
-The Project was part of Stat 425 subject at UIUC where We were required to (in a group of 2-3) analyse Housing data by performing EDA, Modelling ( With Diagnostics) and provide interpretation of the results.
+STAT 425 ( Applied Regression &amp; Design) Project. The Project was part of Stat 425 subject at UIUC where We were required to (in a group of 2-3) analyse Housing data by performing EDA, Modelling ( With Diagnostics) and provide interpretation of the results.
 
 
 ## Data Description:
