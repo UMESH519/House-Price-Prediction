@@ -1,0 +1,438 @@
+---
+title: "HW04_425_655030937"
+author: "Kumar Shubham"
+date: "11/10/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+#install.packages("readxl")
+library(readxl)
+df = read_excel("Real_estate_valuation_data_set.xlsx")
+head(df)
+```
+
+```{r}
+sprintf("The total number of records in the dataset are %d",dim(df)[1])
+
+sprintf("The total number of columns in the dataset are %d",dim(df)[2])
+
+sprintf("The name of the columns in the dataframe are : ")
+colnames(df)
+
+#str(df)
+
+```
+##Rename the columns
+
+```{r}
+names(df)[names(df) == 'No'] <- "Id"
+names(df)[names(df) == 'X1 transaction date'] <- "Transaction_Date"
+names(df)[names(df) == 'X2 house age'] <- "House_Age"
+names(df)[names(df) == 'X3 distance to the nearest MRT station'] <- "Distance_MRT_Station"
+names(df)[names(df) == 'X4 number of convenience stores'] <- "No_Convenience_Stores"
+names(df)[names(df) == 'X5 latitude'] <- "Latitude"
+names(df)[names(df) == 'X6 longitude'] <- "Longitude"
+names(df)[names(df) == 'Y house price of unit area'] <- "House_Price"
+
+
+sprintf("The new name of the columns in the dataframe are : ")
+colnames(df)
+
+```
+##Check for NA values and duplicate rows
+
+```{r}
+colSums(sapply(df, is.na))
+sprintf("The number of duplicate rows are %d", nrow(df) - nrow(unique(df)))
+
+```
+
+
+##Distribution of all the variables
+```{r}
+library(ggplot2)
+library(moments)
+
+
+
+
+ggplot(df, aes(x = Transaction_Date)) + stat_count(width = 0.6,color="darkblue", fill="lightblue") + ggtitle("Plot of count of Transaction Date") +
+  xlab("Transaction Date") + ylab("Count") 
+
+
+
+skewness(df$Transaction_Date)
+kurtosis(df$Transaction_Date)
+```
+
+
+
+```{r}
+
+ggplot(df, aes(x=House_Age))+
+  geom_histogram(color="darkblue", fill="lightblue") + ggtitle("Plot of count of House Age") +
+  xlab("House Age") + ylab("Count") 
+
+
+
+skewness(df$House_Age)
+kurtosis(df$House_Age)
+```
+```{r}
+ggplot(df, aes(x=Distance_MRT_Station))+
+  geom_histogram(color="darkblue", fill="lightblue") + ggtitle("Plot of count of Distance_MRT_Station") +
+  xlab("Distance_MRT_Station") + ylab("Count") 
+```
+
+```{r}
+
+ggplot(df, aes(x=No_Convenience_Stores))+
+  geom_histogram(color="darkblue", fill="lightblue") + ggtitle("Plot of count of No of Convenience Stores") +
+  xlab("No_Convenience_Stores") + ylab("Count") 
+
+```
+
+```{r}
+
+ggplot(df, aes(x=Latitude))+
+  geom_histogram(color="darkblue", fill="lightblue") + ggtitle("Plot of count of Latitude") +
+  xlab("Latitude") + ylab("Count") 
+```
+
+```{r}
+
+ggplot(df, aes(x=Longitude))+
+  geom_histogram(color="darkblue", fill="lightblue") + ggtitle("Plot of count of Longitude") +
+  xlab("Longitude") + ylab("Count") 
+```
+
+
+## Extracting month from date
+```{r}
+library("dplyr")
+dplyr::count(df, Transaction_Date, sort = TRUE)
+df$Transaction_Month <- df$Transaction_Date%%1
+df$Transaction_Month <- round(df$Transaction_Month * 12)
+df$Transaction_Month[df$Transaction_Month == 0] <- 12
+```
+
+## Extracting year from date
+```{r}
+df$Transaction_Year <- floor(df$Transaction_Date)
+head(df)
+```
+
+```{r}
+dplyr::count(df, No_Convenience_Stores, sort = TRUE)
+
+```
+
+```{r}
+
+ggplot(df, aes(x=Distance_MRT_Station, y=House_Price)) + geom_point(color="darkblue") + ggtitle("Scatter Plot of Distance vs House Price")
+
+```
+
+```{r}
+ggplot(df, aes(x=House_Age, y=House_Price)) + geom_point(color="darkblue") + ggtitle("Scatter Plot of House Age vs House Price")
+```
+```{r}
+ggplot(df, aes(x=No_Convenience_Stores, y=House_Price)) + geom_point(color="darkblue") + ggtitle("Scatter Plot of No_Convenience_Stores vs House Price")
+
+```
+
+
+```{r}
+ggplot(df, aes(x=Transaction_Month, y=House_Price)) + geom_point(color="darkblue") + ggtitle("Scatter Plot of Transaction_Month vs House Price")
+
+```
+
+
+```{r}
+df %>% group_by(Transaction_Month) %>% summarise(x = sum(House_Price))
+```
+```{r}
+df %>% group_by(Transaction_Year) %>% summarise(x = sum(House_Price))
+```
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+ggplot(df, aes(x = Transaction_Month)) + geom_bar(color="darkblue", fill="lightblue") + ggtitle("Plot of count of Transaction Month") + xlab("Transaction Month") + ylab("Count") 
+
+
+```
+
+
+
+```{r}
+#install.packages("maps")
+#install.packages("wesanderson")
+library(wesanderson)
+
+world_map <- map_data("world")
+gg_world <- ggplot() + 
+  geom_polygon(data = world_map, 
+               aes(x = long, y = lat, group = group), 
+               fill = "gray95", colour = "gray70", size = 0.2) +
+  theme_bw()
+
+
+gg_world + 
+  geom_point(data = df, aes(x = Longitude, y = Latitude, color = House_Price)) +
+  xlim(c(121.47,121.57)) + ylim(c(24.925, 25.025)) + scale_color_gradient(low="blue", high="red") + ggtitle("Plot of coordinates wrt House Price") + xlab("Latitude") + ylab("Longitude") 
+```
+
+```{r}
+#install.packages("GGally")
+library(GGally)
+
+df <- subset(df, select = -c(Transaction_Year, Id))
+
+head(df)
+
+ggpairs(df, columns = 1:4,title = "Relationship between x1, x2, x3, x4")
+
+pairs(df[,1:4], col= "darkblue", pch=18, main= "Relationship between x1, x2, x3, x4")
+
+```
+```{r}
+
+df <- df[, c("Transaction_Date", "House_Age", "Distance_MRT_Station","No_Convenience_Stores","Latitude","Longitude","Transaction_Month","House_Price")]
+
+ggcorr(df[, 1:6], method = c("everything", "pearson"), hjust = 0.95, size = 5, color = "grey50", layout.exp = 2,label = TRUE, label_size = 3, label_color = "black") 
+
+```
+
+
+```{r}
+
+head(df)
+df$Transaction_Date=as.factor(df$Transaction_Date)
+df$Transaction_Month=as.factor(df$Transaction_Month)
+#df=subset(df,select=-c(Id))
+head(df)
+str(df)
+set.seed(7) #Divinding the Dataset into Train & Test
+smp_size <- floor(0.70 * nrow(df))
+train_ind <- sample(seq_len(nrow(df)), size = smp_size)
+
+train <- df[train_ind, ]
+test <- df[-train_ind, ]
+
+
+
+full_model=lm(House_Price~., data = train)
+summary(full_model)
+
+
+
+```
+We can see from the summary above that there is rank deficiency since for months the coefficients are all "NA". we can also note that the overall p-value is very low. Hence Our model is able to predict the Price. The R-Square comes out to be 0.5611 which is moderate. 
+We can also note that As the house age increseas , it has a diminishing impact on the house price. 
+There is a positive coefficient for No of Convineince Stores that we can inteprets as this has a positive impact on house price.
+.Distance from MRT Station also has a negative impact on House Price. As the House's distance increased from stations, the house price reduces. 
+
+Now We will run model diagnostics.
+
+
+```{r}
+plot(full_model)
+```
+We can see from the above diagnostics that the Q-Q plot is not exactly as expected therefore we may have to run the model diagnostics test. Same interpretation can be drawn form Residual Vs Fitted Values. 
+```{r}
+library(lmtest) 
+
+bptest(full_model) # To detect Heteroscedasticity
+dwtest(full_model) # To detect autocorrelation between residuls
+shapiro.test(residuals(full_model)) #To check normality
+```
+From the bp- test results we can see that our assumption of constant variance is failing. 
+From rhe Shapiro Wilks test we can see that Normality assumption is also being violated,
+From the Durbin-Watson Test result We can see that the assumption of No correlation in residuls is being followed 
+
+
+Now to ensure that Our model is able full adhere to assumptions of Linear Regression model, Lets analyse the leverages, outlier and Cook's distance 
+
+
+
+```{r}
+p=8 #To Check leverages
+n=nrow(train)
+lev=influence(full_model)$hat
+lev[lev>2*p/n][c(1:5)]
+```
+
+
+```{r}
+print(qt(0.05/(2*n),nrow(train)-8))  #To check outliers
+jack=rstudent(full_model)
+sort(abs(jack),decreasing = TRUE)[c(1,2,3,4,5)]
+```
+
+We can see from thr above output that Observation 4 and Observation 54 are outliers. We will now check the influence of these points by cook's distance and then remove if the need be
+
+
+```{r}
+sort(cooks.distance(full_model),decreasing = TRUE)[c(1:5)]
+```
+Though the cook's distance is below 1 which means they are not influential but We would remove these points since they were outliers and our assumptions of linear regression are not being adhered to. After this We will also do Box-Cox transformation since our normality assumption was also failing
+
+```{r}
+library(MASS)
+train=train[-c(4,54), ]  #removing outliers 
+
+boxcox(full_model, plotit = TRUE, lambda = seq(-2, 1.5, by = 0.1))
+```
+From the Box-cox Transformation results, We can see that We need to transform y to log(y) for further modelling.
+Now We will Again try to fit our model but this time We will also take log of the Distance_MRT_station as it can be seen from the EDA that the plot of House_price and log(Distance_MRT_station ) is linear. We will also remove Transaction Date from Analysis since it had high corelation with Month( Duen to rank Deficiency)
+
+##Model 2 ( Improved Multiple Regression Model)
+
+```{r}
+full_model_log=lm(log(House_Price)~Transaction_Month+House_Age+log(Distance_MRT_Station)+No_Convenience_Stores+Latitude+Longitude, data = train)
+
+summary(full_model_log)
+```
+We ca interpret fro mthe above summary that out model'sR Squred had increased from 0.56 to 0.77.  All the variables are coming out to be significant. As the latitiude and longitude improves, the Housing price increases. Now lets check model diagnostics tests after ploting the residual plots. 
+
+```{r}
+
+plot(full_model_log)
+
+bptest(full_model_log)
+dwtest(full_model) 
+shapiro.test(residuals(full_model_log))
+```
+We can clearly see from the ouput aboe that our diagnotics plots have improved. This is comfirmed also by the result of the BPtest .Which now has a p-value >0.05 and thus leading to the fact that the above model folows the assumption of constant variance. But Still our model does not follow the assumption of normality. We will again check for outliers 
+
+```{r}
+print(qt(0.05/(2*n),nrow(train)-7))  #To check outliers
+jack=rstudent(full_model_log)
+sort(abs(jack),decreasing = TRUE)[c(1,2,3,4,5)]
+
+```
+As we can see from aboe that Observation 108 is an outlier. We will remove it agan and run shapiro-wilks test. 
+```{r}
+train=train[-c(108), ]
+```
+
+```{r}
+full_model_log2=lm(log(House_Price)~Transaction_Month+House_Age+log(Distance_MRT_Station)+No_Convenience_Stores+Latitude+Longitude, data = train)
+shapiro.test(residuals(full_model_log2))
+```
+
+
+Now We will calculate RMSE for the above two models that we have fitted till now. 
+
+
+```{r}
+library(Metrics)
+y_pred_model1=predict(full_model,test)
+rmse(test$House_Price,y_pred_model1)  # For model 1
+
+
+y_pred_model2=predict(full_model_log,test)
+rmse(test$House_Price,exp(y_pred_model2))  # Erorr from Model 2
+```
+We can not from the above results that Testing error from model 2 ( full_model_log) is 6.7521
+
+```{r}
+library(caret)
+cv_5 = trainControl(method = "cv", number = 5)
+```
+##Model 3 : Ridge Regression
+
+```{r}
+library(glmnet)
+
+grid = 10^seq(10, -2, length = 100)
+x_train = model.matrix(log(House_Price)~Transaction_Month+House_Age+log(Distance_MRT_Station)+No_Convenience_Stores+Latitude+Longitude, train)
+x_test = model.matrix(log(House_Price)~Transaction_Month+House_Age+log(Distance_MRT_Station)+No_Convenience_Stores+Latitude+Longitude, test)
+
+y_train = log(train$House_Price)
+y_test = test$House_Price
+
+```
+
+
+```{r}
+cv.out = cv.glmnet(x_train, y_train, alpha = 0,lambda = grid) # Fit ridge regression model on training data
+bestlam = cv.out$lambda.min  # Select lamda that minimizes training MSE
+bestlam
+plot(cv.out)
+plot(cv.out$glmnet.fit, "lambda")
+```
+
+
+```{r}
+ridge_mod = glmnet(x_train, y_train, alpha=0, lambda = bestlam, thresh = 1e-12)
+ridge_pred = predict(ridge_mod, s = bestlam, newx = x_test)
+rmse(exp(ridge_pred),y_test)
+```
+
+The testing error obtained from Ridge Regression is 6.58
+
+```{r}
+library(rsample)      # data splitting 
+library(randomForest) # basic implementation
+library(ranger)       # a faster implementation of randomForest
+library(caret)        # an aggregator package for performing many machine learning models
+
+grid <- expand.grid(mtry= seq(2, 6, by = 1),node_size  = seq(3,9, by = 2),sampe_size = c(.55, .632, .70, .80),OOB_RMSE= 0)
+
+for(i in 1:nrow(grid)) {
+  
+  # train model
+  model <- ranger(formula=House_Price ~ Transaction_Month+House_Age+Distance_MRT_Station+No_Convenience_Stores+Latitude+Longitude,
+    data            = train, 
+    num.trees       = 100,
+    mtry            = grid$mtry[i],
+    min.node.size   = grid$node_size[i],
+    sample.fraction = grid$sampe_size[i],
+    seed            = 7)
+  
+  # add OOB error to grid
+   grid$OOB_RMSE[i] <- sqrt(model$prediction.error)
+}
+
+grid %>% 
+  dplyr::arrange(OOB_RMSE) %>%
+  head(10)
+```
+## Final Model 4
+
+```{r}
+  forest_model <- ranger(
+    formula         = House_Price  ~ Transaction_Month+House_Age+Distance_MRT_Station+No_Convenience_Stores+Latitude+Longitude, 
+    data            = train, 
+    num.trees       = 50,
+    mtry            = 3,
+    min.node.size   = 5,
+    sample.fraction = .8,
+    importance      = 'impurity'
+  )
+sqrt(forest_model$prediction.error)
+```
+
+
+```{r}
+pred_randomForest <- predict(forest_model , test)
+rmse(test$House_Price,pred_randomForest$predictions)
+```
+
+
+
+
+
+
+
+```{r}
+library(vip)
+v1 <- vip(forest_model)
+grid.arrange(v1,ncol=1)
+
+```
+
